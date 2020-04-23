@@ -38,12 +38,13 @@ DEFAULT CHARACTER SET = utf8;
 DROP TABLE IF EXISTS `printeroffice`.`employees` ;
 
 CREATE TABLE IF NOT EXISTS `printeroffice`.`employees` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `login` VARCHAR(50) NOT NULL,
+  `password` VARCHAR(50) NOT NULL,
   `lastName` VARCHAR(45) NOT NULL,
   `firstName` VARCHAR(45) NOT NULL,
-  `middleName` VARCHAR(45) NOT NULL,
+  `middleName` VARCHAR(45) NULL,
   `fired` TINYINT NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`))
+  PRIMARY KEY (`login`))
 ENGINE = InnoDB
 AUTO_INCREMENT = 2
 DEFAULT CHARACTER SET = utf8;
@@ -70,14 +71,14 @@ DROP TABLE IF EXISTS `printeroffice`.`orders` ;
 
 CREATE TABLE IF NOT EXISTS `printeroffice`.`orders` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `emplId` INT(11) NOT NULL,
+  `emplLogin` VARCHAR(50) NOT NULL,
   `custId` VARCHAR(16) NOT NULL,
   `datetime` DATETIME NOT NULL,
   `totalPrice` INT(11) NULL,
   `statusId` INT(11) NOT NULL DEFAULT 3,
   `comment` VARCHAR(255) NULL DEFAULT '-',
   PRIMARY KEY (`id`),
-  INDEX `emplKey_idx` (`emplId` ASC) VISIBLE,
+  INDEX `emplKey_idx` (`emplLogin` ASC) VISIBLE,
   INDEX `statusKey_idx` (`statusId` ASC) VISIBLE,
   INDEX `clientKey_idx` (`custId` ASC) VISIBLE,
   CONSTRAINT `clientKey`
@@ -87,9 +88,9 @@ CREATE TABLE IF NOT EXISTS `printeroffice`.`orders` (
   CONSTRAINT `statusKey`
     FOREIGN KEY (`statusId`)
     REFERENCES `printeroffice`.`statuses` (`id`),
-  CONSTRAINT `вщсKey`
-    FOREIGN KEY (`emplId`)
-    REFERENCES `printeroffice`.`employees` (`id`))
+  CONSTRAINT `emplKey`
+    FOREIGN KEY (`emplLogin`)
+    REFERENCES `printeroffice`.`employees` (`login`))
 ENGINE = InnoDB
 AUTO_INCREMENT = 12
 DEFAULT CHARACTER SET = utf8;
@@ -222,6 +223,24 @@ CREATE TABLE IF NOT EXISTS `printeroffice`.`supplies` (
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
+
+-- -----------------------------------------------------
+-- Table `printeroffice`.`admins`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `printeroffice`.`admins` ;
+
+CREATE TABLE IF NOT EXISTS `printeroffice`.`admins` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `emplLogin` VARCHAR(50) NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `emplAdminKey_idx` (`emplLogin` ASC) VISIBLE,
+  CONSTRAINT `emplAdminKey`
+    FOREIGN KEY (`emplLogin`)
+    REFERENCES `printeroffice`.`employees` (`login`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
 USE `printeroffice`;
 
 DELIMITER $$
@@ -232,7 +251,7 @@ USE `printeroffice`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `printeroffice`.`orders_BEFORE_INSERT` BEFORE INSERT ON `orders` FOR EACH ROW
 BEGIN
 	DECLARE isEmplWork TINYINT;
-    SELECT fired INTO isEmplWork FROM employees WHERE employees.id = NEW.emplId;
+    SELECT fired INTO isEmplWork FROM employees WHERE employees.login = NEW.emplLogin;
     
 	SET NEW.datetime = NOW();
     
@@ -249,17 +268,25 @@ CREATE DEFINER = CURRENT_USER TRIGGER `printeroffice`.`orders_BEFORE_UPDATE` BEF
 BEGIN
 	DECLARE isEmplWork TINYINT;
     
-    IF OLD.statusId = 3 THEN
-		IF NEW.statusId = 1 or NEW.statusId = 2 THEN
-			UPDATE orderitems SET statusId = NEW.statusId WHERE orderId = NEW.id;
-		END IF;
+    IF NEW.id != OLD.id THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Изменение идентификатора заказа невозможно!';
+    END IF;
+    
+    IF OLD.statusId = 3 THEN -- Когда старый статус "В очереди"
+		IF NEW.statusId = 1 THEN -- Когда новый статус "Отменён" или "Завершён"
+			UPDATE orderitems SET statusId = NEW.statusId WHERE orderId = NEW.id and statusId = 3;
+		ELSE 
+			IF NEW.statusId = 2 THEN 
+				UPDATE orderitems SET statusId = NEW.statusId WHERE orderId = NEW.id and statusId = 3;
+			END IF;
+        END IF;
 	ELSE
-		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'После отмены или завершения изменение статуса услуги невозможно!';
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'После отмены или завершения изменение статуса заказа невозможно!';
     END IF;
     
     SET NEW.datetime = NOW();
     
-	SELECT fired INTO isEmplWork FROM employees WHERE employees.id = NEW.emplId;
+	SELECT fired INTO isEmplWork FROM employees WHERE employees.login = NEW.emplLogin;
 	IF isEmplWork = 1 THEN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Уволенные сотрудники не могут выполнять заказы!';
 	END IF;
@@ -290,18 +317,28 @@ USE `printeroffice`$$
 DROP TRIGGER IF EXISTS `printeroffice`.`orderitems_BEFORE_UPDATE` $$
 USE `printeroffice`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `printeroffice`.`orderitems_BEFORE_UPDATE` BEFORE UPDATE ON `orderitems` FOR EACH ROW
-BEGIN
+BEGIN   
 	IF NEW.serviceId != OLD.serviceId THEN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Изменение типа услуги невозможно!';
+	END IF;
+    
+	IF NEW.orderId != OLD.orderId THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Изменение номера заказа услуги невозможно!';
 	END IF;
     
 	IF NEW.deviceId != OLD.deviceId THEN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Изменение идентификатора устройства, по которому оказывается услуга, невозможно!';
 	END IF;
     
-    IF OLD.statusId = 3 THEN
-		IF NEW.statusId = 1 or NEW.statusId = 2 THEN
-			UPDATE devices SET number = number - 1 WHERE devices.id = OLD.deviceId;
+    IF OLD.statusId = 3 THEN -- Когда старый статус "В очереди"
+		IF NEW.statusId = 1 or NEW.statusId = 2 THEN -- Когда новый статус "Отменён" или "Завершён"
+			IF OLD.serviceId != 3 THEN -- Когда услуга не "Поставка"
+				UPDATE devices SET number = number - 1 WHERE devices.id = OLD.deviceId; -- Отдаём со склада устройство
+			ELSE -- Когда услуга "Поставка"
+				IF NEW.statusId = 1 THEN
+					UPDATE devices SET number = number + 1 WHERE devices.id = OLD.deviceId; -- Возвращаем устройство на склад
+                END IF;
+            END IF;
 		END IF;
 	ELSE
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'После отмены или завершения изменение статуса услуги невозможно!';
@@ -344,7 +381,8 @@ COMMIT;
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `printeroffice`;
-INSERT INTO `printeroffice`.`employees` (`id`, `lastName`, `firstName`, `middleName`, `fired`) VALUES (1, 'Калугин', 'Виктор', 'Иванович', DEFAULT);
+INSERT INTO `printeroffice`.`employees` (`login`, `password`, `lastName`, `firstName`, `middleName`, `fired`) VALUES ('test', 'test', 'Калугин', 'Виктор', 'Иванович', DEFAULT);
+INSERT INTO `printeroffice`.`employees` (`login`, `password`, `lastName`, `firstName`, `middleName`, `fired`) VALUES ('admin', 'admin', 'Администрор', 'ИС', NULL, DEFAULT);
 
 COMMIT;
 
@@ -357,6 +395,20 @@ USE `printeroffice`;
 INSERT INTO `printeroffice`.`statuses` (`id`, `title`) VALUES (1, 'Отменён');
 INSERT INTO `printeroffice`.`statuses` (`id`, `title`) VALUES (2, 'Завершён');
 INSERT INTO `printeroffice`.`statuses` (`id`, `title`) VALUES (3, 'Выполняется');
+
+COMMIT;
+
+
+-- -----------------------------------------------------
+-- Data for table `printeroffice`.`orders`
+-- -----------------------------------------------------
+START TRANSACTION;
+USE `printeroffice`;
+INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `datetime`, `totalPrice`, `statusId`, `comment`) VALUES (1, 'test', '+79402231549', '2020-03-03 10:00:00', 3800, 3, NULL);
+INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `datetime`, `totalPrice`, `statusId`, `comment`) VALUES (2, 'test', '+79396795895', '2020-03-05 09:30:00', 1000, 3, NULL);
+INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `datetime`, `totalPrice`, `statusId`, `comment`) VALUES (3, 'test', '+79929236423', '2020-03-04 13:20:00', 1000, 3, NULL);
+INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `datetime`, `totalPrice`, `statusId`, `comment`) VALUES (4, 'test', '+79439467818', '2020-03-03 15:00:00', 3000, 3, NULL);
+INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `datetime`, `totalPrice`, `statusId`, `comment`) VALUES (5, 'test', '+79815174981', '2020-03-06 12:00:00', 3000, 3, NULL);
 
 COMMIT;
 
@@ -407,18 +459,6 @@ INSERT INTO `printeroffice`.`devices` (`id`, `model`, `deviceTypeId`, `deviceMan
 
 COMMIT;
 
--- -----------------------------------------------------
--- Data for table `printeroffice`.`supplies`
--- -----------------------------------------------------
-START TRANSACTION;
-USE `printeroffice`;
-INSERT INTO `printeroffice`.`supplies` (`id`, `datetime`, `deviceId`, `price`, `number`) VALUES (1, NULL, 1, 100000, 10);
-INSERT INTO `printeroffice`.`supplies` (`id`, `datetime`, `deviceId`, `price`, `number`) VALUES (2, NULL, 2, 200000, 10);
-INSERT INTO `printeroffice`.`supplies` (`id`, `datetime`, `deviceId`, `price`, `number`) VALUES (3, NULL, 3, 120000, 10);
-INSERT INTO `printeroffice`.`supplies` (`id`, `datetime`, `deviceId`, `price`, `number`) VALUES (4, NULL, 4, 231000, 10);
-INSERT INTO `printeroffice`.`supplies` (`id`, `datetime`, `deviceId`, `price`, `number`) VALUES (5, NULL, 5, 100000, 10);
-
-COMMIT;
 
 -- -----------------------------------------------------
 -- Data for table `printeroffice`.`servicesTypes`
@@ -432,15 +472,15 @@ INSERT INTO `printeroffice`.`servicesTypes` (`id`, `title`) VALUES (3, 'Пост
 COMMIT;
 
 -- -----------------------------------------------------
--- Data for table `printeroffice`.`orders`
+-- Data for table `printeroffice`.`supplies`
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `printeroffice`;
-INSERT INTO `printeroffice`.`orders` (`id`, `emplId`, `custId`, `datetime`, `totalPrice`, `statusId`, `comment`) VALUES (1, 1, '+79402231549', '2020-03-03 10:00:00', 3800, 3, NULL);
-INSERT INTO `printeroffice`.`orders` (`id`, `emplId`, `custId`, `datetime`, `totalPrice`, `statusId`, `comment`) VALUES (2, 1, '+79396795895', '2020-03-05 09:30:00', 1000, 3, NULL);
-INSERT INTO `printeroffice`.`orders` (`id`, `emplId`, `custId`, `datetime`, `totalPrice`, `statusId`, `comment`) VALUES (3, 1, '+79929236423', '2020-03-04 13:20:00', 1000, 3, NULL);
-INSERT INTO `printeroffice`.`orders` (`id`, `emplId`, `custId`, `datetime`, `totalPrice`, `statusId`, `comment`) VALUES (4, 1, '+79439467818', '2020-03-03 15:00:00', 3000, 3, NULL);
-INSERT INTO `printeroffice`.`orders` (`id`, `emplId`, `custId`, `datetime`, `totalPrice`, `statusId`, `comment`) VALUES (5, 1, '+79815174981', '2020-03-06 12:00:00', 3000, 3, NULL);
+INSERT INTO `printeroffice`.`supplies` (`id`, `datetime`, `deviceId`, `price`, `number`) VALUES (1, NULL, 1, 100000, 10);
+INSERT INTO `printeroffice`.`supplies` (`id`, `datetime`, `deviceId`, `price`, `number`) VALUES (2, NULL, 2, 200000, 10);
+INSERT INTO `printeroffice`.`supplies` (`id`, `datetime`, `deviceId`, `price`, `number`) VALUES (3, NULL, 3, 120000, 10);
+INSERT INTO `printeroffice`.`supplies` (`id`, `datetime`, `deviceId`, `price`, `number`) VALUES (4, NULL, 4, 231000, 10);
+INSERT INTO `printeroffice`.`supplies` (`id`, `datetime`, `deviceId`, `price`, `number`) VALUES (5, NULL, 5, 100000, 10);
 
 COMMIT;
 
