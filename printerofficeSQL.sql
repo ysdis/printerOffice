@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS `printeroffice`.`employees` (
   `firstName` VARCHAR(45) NOT NULL,
   `middleName` VARCHAR(45) NULL,
   `fired` TINYINT NOT NULL DEFAULT 0,
+  `isAdmin` TINYINT NOT NULL DEFAULT 0,
   PRIMARY KEY (`login`))
 ENGINE = InnoDB
 AUTO_INCREMENT = 2
@@ -51,16 +52,30 @@ DEFAULT CHARACTER SET = utf8;
 
 
 -- -----------------------------------------------------
--- Table `printeroffice`.`statuses`
+-- Table `printeroffice`.`orderStatuses`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `printeroffice`.`statuses` ;
+DROP TABLE IF EXISTS `printeroffice`.`orderStatuses` ;
 
-CREATE TABLE IF NOT EXISTS `printeroffice`.`statuses` (
+CREATE TABLE IF NOT EXISTS `printeroffice`.`orderStatuses` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `title` VARCHAR(45) NOT NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB
 AUTO_INCREMENT = 4
+DEFAULT CHARACTER SET = utf8;
+
+
+-- -----------------------------------------------------
+-- Table `printeroffice`.`services`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `printeroffice`.`services` ;
+
+CREATE TABLE IF NOT EXISTS `printeroffice`.`services` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(144) NOT NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 17
 DEFAULT CHARACTER SET = utf8;
 
 
@@ -73,24 +88,33 @@ CREATE TABLE IF NOT EXISTS `printeroffice`.`orders` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `emplLogin` VARCHAR(50) NOT NULL,
   `custId` VARCHAR(16) NOT NULL,
-  `datetime` DATETIME NOT NULL,
-  `totalPrice` INT(11) NULL,
+  `serviceId` INT NOT NULL,
+  `startDateTime` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `lastModifiedDateTime` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `statusId` INT(11) NOT NULL DEFAULT 3,
   `comment` VARCHAR(255) NULL DEFAULT '-',
   PRIMARY KEY (`id`),
   INDEX `emplKey_idx` (`emplLogin` ASC) VISIBLE,
   INDEX `statusKey_idx` (`statusId` ASC) VISIBLE,
   INDEX `clientKey_idx` (`custId` ASC) VISIBLE,
+  INDEX `serviceKey_idx` (`serviceId` ASC) VISIBLE,
   CONSTRAINT `clientKey`
     FOREIGN KEY (`custId`)
     REFERENCES `printeroffice`.`customers` (`tel`)
     ON UPDATE CASCADE,
   CONSTRAINT `statusKey`
     FOREIGN KEY (`statusId`)
-    REFERENCES `printeroffice`.`statuses` (`id`),
+    REFERENCES `printeroffice`.`orderStatuses` (`id`)
+    ON UPDATE CASCADE,
   CONSTRAINT `emplKey`
     FOREIGN KEY (`emplLogin`)
-    REFERENCES `printeroffice`.`employees` (`login`))
+    REFERENCES `printeroffice`.`employees` (`login`)
+    ON UPDATE CASCADE,
+  CONSTRAINT `serviceKey`
+    FOREIGN KEY (`serviceId`)
+    REFERENCES `printeroffice`.`services` (`id`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE)
 ENGINE = InnoDB
 AUTO_INCREMENT = 12
 DEFAULT CHARACTER SET = utf8;
@@ -109,11 +133,11 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `printeroffice`.`deviceManufacs`
+-- Table `printeroffice`.`devicesManufacs`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `printeroffice`.`deviceManufacs` ;
+DROP TABLE IF EXISTS `printeroffice`.`devicesManufacs` ;
 
-CREATE TABLE IF NOT EXISTS `printeroffice`.`deviceManufacs` (
+CREATE TABLE IF NOT EXISTS `printeroffice`.`devicesManufacs` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `title` VARCHAR(50) NOT NULL,
   PRIMARY KEY (`id`))
@@ -128,40 +152,80 @@ DROP TABLE IF EXISTS `printeroffice`.`devices` ;
 CREATE TABLE IF NOT EXISTS `printeroffice`.`devices` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `model` VARCHAR(144) NOT NULL,
+  `deviceManufacId` INT NOT NULL,
   `deviceTypeId` INT NOT NULL,
-  `deviceManufac` INT NOT NULL,
-  `price` INT NOT NULL,
-  `number` INT NOT NULL,
   PRIMARY KEY (`id`),
-  INDEX `printerKey_idx` (`deviceTypeId` ASC) VISIBLE,
-  INDEX `devManKey_idx` (`deviceManufac` ASC) VISIBLE,
-  CONSTRAINT `devTypeKey`
+  INDEX `DevTypeKey_idx` (`deviceTypeId` ASC) VISIBLE,
+  INDEX `DevManKey_idx` (`deviceManufacId` ASC) VISIBLE,
+  CONSTRAINT `DevTypeKey`
     FOREIGN KEY (`deviceTypeId`)
     REFERENCES `printeroffice`.`deviceTypes` (`id`)
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
-  CONSTRAINT `devManKey`
-    FOREIGN KEY (`deviceManufac`)
-    REFERENCES `printeroffice`.`deviceManufacs` (`id`)
+  CONSTRAINT `DevManKey`
+    FOREIGN KEY (`deviceManufacId`)
+    REFERENCES `printeroffice`.`devicesManufacs` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `printeroffice`.`storageStatuses`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `printeroffice`.`storageStatuses` ;
+
+CREATE TABLE IF NOT EXISTS `printeroffice`.`storageStatuses` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(50) NOT NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `printeroffice`.`destinations`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `printeroffice`.`destinations` ;
+
+CREATE TABLE IF NOT EXISTS `printeroffice`.`destinations` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(50) NOT NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `printeroffice`.`storage`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `printeroffice`.`storage` ;
+
+CREATE TABLE IF NOT EXISTS `printeroffice`.`storage` (
+  `sn` VARCHAR(50) NOT NULL,
+  `deviceId` INT NOT NULL,
+  `statusId` INT NOT NULL DEFAULT 1,
+  `destinationId` INT NOT NULL DEFAULT 1,
+  `price` INT NOT NULL,
+  PRIMARY KEY (`sn`),
+  INDEX `deviceKey_idx` (`deviceId` ASC) VISIBLE,
+  INDEX `storStatKey_idx` (`statusId` ASC) VISIBLE,
+  INDEX `destKet_idx` (`destinationId` ASC) VISIBLE,
+  CONSTRAINT `deviceKey`
+    FOREIGN KEY (`deviceId`)
+    REFERENCES `printeroffice`.`devices` (`id`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT `storStatKey`
+    FOREIGN KEY (`statusId`)
+    REFERENCES `printeroffice`.`storageStatuses` (`id`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT `destKet`
+    FOREIGN KEY (`destinationId`)
+    REFERENCES `printeroffice`.`destinations` (`id`)
     ON DELETE RESTRICT
     ON UPDATE CASCADE)
 ENGINE = InnoDB
 AUTO_INCREMENT = 89
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `printeroffice`.`servicesTypes`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `printeroffice`.`servicesTypes` ;
-
-CREATE TABLE IF NOT EXISTS `printeroffice`.`servicesTypes` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `title` VARCHAR(144) NOT NULL,
-  `price` INT NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`))
-ENGINE = InnoDB
-AUTO_INCREMENT = 17
 DEFAULT CHARACTER SET = utf8;
 
 
@@ -172,77 +236,47 @@ DROP TABLE IF EXISTS `printeroffice`.`orderitems` ;
 
 CREATE TABLE IF NOT EXISTS `printeroffice`.`orderitems` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `orderId` INT(11) NOT NULL,
-  `deviceId` INT NOT NULL,
-  `serviceId` INT NOT NULL,
-  `statusId` INT NOT NULL DEFAULT 3,
-  `price` INT NOT NULL DEFAULT 0,
+  `orderId` INT NOT NULL,
+  `storageSn` VARCHAR(50) NOT NULL,
   PRIMARY KEY (`id`),
-  INDEX `itemId_idx` (`deviceId` ASC) VISIBLE,
-  INDEX `orderKey` (`orderId` ASC) VISIBLE,
-  INDEX `serviceId_idx` (`serviceId` ASC) VISIBLE,
-  INDEX `statusListKey_idx` (`statusId` ASC) VISIBLE,
-  CONSTRAINT `storeId`
-    FOREIGN KEY (`deviceId`)
-    REFERENCES `printeroffice`.`devices` (`id`)
-    ON UPDATE CASCADE,
+  INDEX `orderKey_idx` (`orderId` ASC) VISIBLE,
   CONSTRAINT `orderKey`
     FOREIGN KEY (`orderId`)
     REFERENCES `printeroffice`.`orders` (`id`)
     ON UPDATE CASCADE,
-  CONSTRAINT `serviceId`
-    FOREIGN KEY (`serviceId`)
-    REFERENCES `printeroffice`.`servicesTypes` (`id`)
+  CONSTRAINT `snKey`
+    FOREIGN KEY (`storageSn`)
+    REFERENCES `printeroffice`.`storage` (`sn`)
     ON DELETE RESTRICT
-    ON UPDATE CASCADE,
-  CONSTRAINT `statusListKey`
-    FOREIGN KEY (`statusId`)
-    REFERENCES `printeroffice`.`statuses` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    ON UPDATE CASCADE)
 ENGINE = InnoDB
 AUTO_INCREMENT = 39
 DEFAULT CHARACTER SET = utf8;
 
+USE `printeroffice` ;
 
 -- -----------------------------------------------------
--- Table `printeroffice`.`supplies`
+-- Placeholder table for view `printeroffice`.`storageDetail`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `printeroffice`.`supplies` ;
-
-CREATE TABLE IF NOT EXISTS `printeroffice`.`supplies` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `datetime` DATETIME NULL,
-  `deviceId` INT NOT NULL,
-  `price` INT NOT NULL,
-  `number` INT NOT NULL,
-  PRIMARY KEY (`id`),
-  INDEX `deviceKeySup_idx` (`deviceId` ASC) VISIBLE,
-  CONSTRAINT `deviceKeySup`
-    FOREIGN KEY (`deviceId`)
-    REFERENCES `printeroffice`.`devices` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS `printeroffice`.`storageDetail` (`sn` INT, `'model'` INT, `'status'` INT, `'destination'` INT);
 
 -- -----------------------------------------------------
--- Table `printeroffice`.`admins`
+-- View `printeroffice`.`storageDetail`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `printeroffice`.`admins` ;
-
-CREATE TABLE IF NOT EXISTS `printeroffice`.`admins` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `emplLogin` VARCHAR(50) NOT NULL,
-  PRIMARY KEY (`id`),
-  INDEX `emplAdminKey_idx` (`emplLogin` ASC) VISIBLE,
-  CONSTRAINT `emplAdminKey`
-    FOREIGN KEY (`emplLogin`)
-    REFERENCES `printeroffice`.`employees` (`login`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
+DROP TABLE IF EXISTS `printeroffice`.`storageDetail`;
+DROP VIEW IF EXISTS `printeroffice`.`storageDetail` ;
+USE `printeroffice`;
+CREATE  OR REPLACE VIEW `storageDetail` AS
+SELECT
+	sn,
+	devices.model AS 'model',
+    storageStatuses.title AS 'status',
+    destinations.title AS 'destination'
+FROM 
+	storage
+JOIN storagestatuses ON storagestatuses.id = storage.statusId
+JOIN destinations ON destinations.id = storage.destinationId
+JOIN devices ON devices.id = storage.deviceId;
 USE `printeroffice`;
 
 DELIMITER $$
@@ -255,8 +289,8 @@ BEGIN
 	DECLARE isEmplWork TINYINT;
     SELECT fired INTO isEmplWork FROM employees WHERE employees.login = NEW.emplLogin;
     
-	SET NEW.datetime = NOW();
-    
+	SET NEW.startDateTime = NOW();
+        
 	IF isEmplWork = 1 THEN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Уволенные сотрудники не могут выполнять заказы!';
 	END IF;
@@ -270,23 +304,44 @@ CREATE DEFINER = CURRENT_USER TRIGGER `printeroffice`.`orders_BEFORE_UPDATE` BEF
 BEGIN
 	DECLARE isEmplWork TINYINT;
     
-    IF NEW.id != OLD.id THEN
-		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Изменение идентификатора заказа невозможно!';
+    IF NEW.serviceId != OLD.serviceId THEN -- Когда изменился вид услуги
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Изменение вида оказываемой услуги невозможно!';
+    END IF;
+        
+	IF NEW.custId != OLD.custId THEN -- Когда изменился клиент
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Изменение клиента невозможно!';
     END IF;
     
-    IF OLD.statusId = 3 THEN -- Когда старый статус "В очереди"
-		IF NEW.statusId = 1 THEN -- Когда новый статус "Отменён" или "Завершён"
-			UPDATE orderitems SET statusId = NEW.statusId WHERE orderId = NEW.id and statusId = 3;
-		ELSE 
-			IF NEW.statusId = 2 THEN 
-				UPDATE orderitems SET statusId = NEW.statusId WHERE orderId = NEW.id and statusId = 3;
+	IF NEW.startDateTime != OLD.startDateTime THEN -- Когда изменилась дата заказа
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Изменение даты принятия заказа невозможно!';
+    END IF;
+    
+    IF OLD.statusId = 3 THEN -- Когда старый статус "Выполняется"
+		IF NEW.statusId = 1 THEN -- Когда новый статус "Отменён"
+			IF OLD.serviceId = 3 THEN -- Когда "Продажа"
+				UPDATE storage SET statusId = 1 WHERE sn IN(SELECT storageSn FROM orderitems WHERE orderId = OLD.id); -- Вернули на склад все устройства
+            END IF;
+            IF OLD.serviceId = 1 or OLD.serviceId = 2 THEN -- Когда "Ремонт","Заправка"
+				UPDATE storage SET statusId = 2 WHERE sn IN(SELECT storageSn FROM orderitems WHERE orderId = OLD.id); -- Вернули клиентам их сломанные устройства
+            END IF;
+            -- При отмене возврата ничего не произойдёт, кроме изменения статуса заказа на возврат
+		ELSE
+			IF NEW.statusId = 2 THEN -- Когда новый статус "Завершён"
+				IF OLD.serviceId = 3 or OLD.serviceId = 1 or OLD.serviceId = 2 THEN -- Когда "Продажа"
+					UPDATE storage SET statusId = 2 WHERE sn IN(SELECT storageSn FROM orderitems WHERE orderId = OLD.id); -- Выдали с склада все устройства заказа
+				END IF;
+                IF OLD.serviceId = 1 or OLD.serviceId = 2 THEN -- Когда "Ремонт","Заправка"
+					UPDATE storage SET statusId = 2 WHERE sn IN(SELECT storageSn FROM orderitems WHERE orderId = OLD.id); -- Вернули клиентам их сломанные устройства
+				END IF;
+				IF OLD.serviceId = 4 THEN -- Когда "Возврат"
+					UPDATE storage SET statusId = 1 WHERE sn IN(SELECT storageSn FROM orderitems WHERE orderId = OLD.id); -- Вернули купленные устройства на склад
+				END IF;
 			END IF;
         END IF;
 	ELSE
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'После отмены или завершения изменение статуса заказа невозможно!';
     END IF;
     
-    SET NEW.datetime = NOW();
     
 	SELECT fired INTO isEmplWork FROM employees WHERE employees.login = NEW.emplLogin;
 	IF isEmplWork = 1 THEN
@@ -300,18 +355,41 @@ DROP TRIGGER IF EXISTS `printeroffice`.`orderitems_BEFORE_INSERT` $$
 USE `printeroffice`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `printeroffice`.`orderitems_BEFORE_INSERT` BEFORE INSERT ON `orderitems` FOR EACH ROW
 BEGIN
-	DECLARE numberOfDevices INT;
-    SELECT devices.number INTO numberOfDevices FROM devices WHERE devices.id = NEW.deviceId; 
+    DECLARE statusOfOrder INT;
+    DECLARE serviceOfOrder INT;
+    DECLARE storageSnStatus INT;
+    DECLARE storageSnDestination INT;
     
-	IF NEW.serviceId = 1 or NEW.serviceId = 2 THEN
-		UPDATE devices SET number = number + 1 WHERE devices.id = NEw.deviceId;
-	ELSE 
-		IF NEW.serviceId = 3 and numberOfDevices > 0 THEN
-			UPDATE devices SET number = number - 1 WHERE devices.id = NEW.deviceId;
-		ELSE
-			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Устройство отсутствует в наличии!';
-        END IF;
+    SELECT statusId INTO statusOfOrder FROM orders WHERE id = NEW.orderId;
+	SELECT serviceId INTO serviceOfOrder FROM orders WHERE id = NEW.orderId;
+    SELECT statusId INTO storageSnStatus FROM storage WHERE sn = NEW.storageSn;
+    SELECT destinationId INTO storageSnDestination FROM storage WHERE sn = NEW.storageSn;
+    
+    IF statusOfOrder != 3 THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Добавление услуг в завершенный/отмененный заказ невозможна!';
     END IF;
+    
+    IF serviceOfOrder = 3 THEN -- Когда "Продажа"
+		IF storageSnStatus = 1 and storageSnDestination = 1 THEN -- Если товар в наличии и предназначение "Реализация"
+			UPDATE storage SET statusId = 3 WHERE sn = NEW.storageSn; -- Резервируется на складе
+        ELSE
+			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Товар отсутсвует или зарезервирован!';
+        END IF;
+	END IF;
+    
+	IF serviceOfOrder = 1 or serviceOfOrder = 2 THEN -- Когда "Ремонт","Заправка"
+		IF storageSnStatus = 2 and storageSnDestination = 2 THEN -- Если товар отсутствует и предназначение "Хранение"
+			UPDATE storage SET statusId = 1 WHERE sn = NEW.storageSn; -- Попадает на склад
+        ELSE
+			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ошибка, устройство не может быть добавлено к заказу (Уже есть на складе, предназначен для реализации)!';
+        END IF;
+	END IF;
+    
+	IF serviceOfOrder = 4 THEN -- Когда "Возврат"
+		IF (storageSnStatus = 1 or storageSnStatus = 3) and storageSnDestination != 1 THEN -- Если товар присутствует или зарезервирован и предназначение не "Реализация"
+			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ошибка, устройство возвращено!';
+        END IF;
+	END IF;
 END$$
 
 
@@ -320,41 +398,37 @@ DROP TRIGGER IF EXISTS `printeroffice`.`orderitems_BEFORE_UPDATE` $$
 USE `printeroffice`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `printeroffice`.`orderitems_BEFORE_UPDATE` BEFORE UPDATE ON `orderitems` FOR EACH ROW
 BEGIN   
-	IF NEW.serviceId != OLD.serviceId THEN
-		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Изменение типа услуги невозможно!';
+	IF NEW.storageSn != OLD.storageSn THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Изменение устройств заказа невозможно!';
 	END IF;
     
 	IF NEW.orderId != OLD.orderId THEN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Изменение номера заказа услуги невозможно!';
 	END IF;
-    
-	IF NEW.deviceId != OLD.deviceId THEN
-		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Изменение идентификатора устройства, по которому оказывается услуга, невозможно!';
-	END IF;
-    
-    IF OLD.statusId = 3 THEN -- Когда старый статус "В очереди"
-		IF NEW.statusId = 1 or NEW.statusId = 2 THEN -- Когда новый статус "Отменён" или "Завершён"
-			IF OLD.serviceId != 3 THEN -- Когда услуга не "Поставка"
-				UPDATE devices SET number = number - 1 WHERE devices.id = OLD.deviceId; -- Отдаём со склада устройство
-			ELSE -- Когда услуга "Поставка"
-				IF NEW.statusId = 1 THEN
-					UPDATE devices SET number = number + 1 WHERE devices.id = OLD.deviceId; -- Возвращаем устройство на склад
-                END IF;
-            END IF;
-		END IF;
-	ELSE
-		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'После отмены или завершения изменение статуса услуги невозможно!';
-    END IF;
 END$$
 
 
 USE `printeroffice`$$
-DROP TRIGGER IF EXISTS `printeroffice`.`supplies_BEFORE_INSERT` $$
+DROP TRIGGER IF EXISTS `printeroffice`.`orderitems_BEFORE_DELETE` $$
 USE `printeroffice`$$
-CREATE DEFINER = CURRENT_USER TRIGGER `supplies_BEFORE_INSERT` BEFORE INSERT ON `supplies` FOR EACH ROW
+CREATE DEFINER = CURRENT_USER TRIGGER `printeroffice`.`orderitems_BEFORE_DELETE` BEFORE DELETE ON `orderitems` FOR EACH ROW
 BEGIN
-	UPDATE devices SET number = NEW.number WHERE id = NEW.deviceId;
-    SET NEW.datetime = NOW();
+	DECLARE statusOfOrder INT;
+	SELECT statusId INTO statusOfOrder FROM orders WHERE id = OLD.orderId;
+    
+	IF statusOfOrder != 3 THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Удаление услуг в завершенном/отмененном заказ невозможно!';
+    END IF;
+    
+    IF serviceOfOrder = 3 THEN -- Когда "Продажа"
+		UPDATE storage SET statusId = 1 WHERE sn = OLD.storageSn; -- Резервация снимается
+	END IF;
+    
+	IF serviceOfOrder = 1 or serviceOfOrder = 2 THEN -- Когда "Ремонт","Заправка"
+		UPDATE storage SET statusId = 2 WHERE sn = OLD.storageSn; -- Уходит со склада, так как запись будет удалена
+	END IF;
+    
+	-- Когда возврат, ничего не делаем, так как возвращение устройств на склад произойдет только после завершения заказа
 END$$
 
 
@@ -383,20 +457,33 @@ COMMIT;
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `printeroffice`;
-INSERT INTO `printeroffice`.`employees` (`login`, `password`, `lastName`, `firstName`, `middleName`, `fired`) VALUES ('test', 'test', 'Калугин', 'Виктор', 'Иванович', DEFAULT);
-INSERT INTO `printeroffice`.`employees` (`login`, `password`, `lastName`, `firstName`, `middleName`, `fired`) VALUES ('admin', 'admin', 'Администрор', 'ИС', NULL, DEFAULT);
+INSERT INTO `printeroffice`.`employees` (`login`, `password`, `lastName`, `firstName`, `middleName`, `fired`, `isAdmin`) VALUES ('test', 'test', 'Калугин', 'Виктор', 'Иванович', DEFAULT, DEFAULT);
+INSERT INTO `printeroffice`.`employees` (`login`, `password`, `lastName`, `firstName`, `middleName`, `fired`, `isAdmin`) VALUES ('admin', 'admin', 'Администрор', 'ИС', NULL, DEFAULT, 1);
 
 COMMIT;
 
 
 -- -----------------------------------------------------
--- Data for table `printeroffice`.`statuses`
+-- Data for table `printeroffice`.`orderStatuses`
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `printeroffice`;
-INSERT INTO `printeroffice`.`statuses` (`id`, `title`) VALUES (1, 'Отменён');
-INSERT INTO `printeroffice`.`statuses` (`id`, `title`) VALUES (2, 'Завершён');
-INSERT INTO `printeroffice`.`statuses` (`id`, `title`) VALUES (3, 'Выполняется');
+INSERT INTO `printeroffice`.`orderStatuses` (`id`, `title`) VALUES (1, 'Отменён');
+INSERT INTO `printeroffice`.`orderStatuses` (`id`, `title`) VALUES (2, 'Завершён');
+INSERT INTO `printeroffice`.`orderStatuses` (`id`, `title`) VALUES (3, 'Выполняется');
+
+COMMIT;
+
+
+-- -----------------------------------------------------
+-- Data for table `printeroffice`.`services`
+-- -----------------------------------------------------
+START TRANSACTION;
+USE `printeroffice`;
+INSERT INTO `printeroffice`.`services` (`id`, `title`) VALUES (1, 'Ремонт');
+INSERT INTO `printeroffice`.`services` (`id`, `title`) VALUES (2, 'Заправка');
+INSERT INTO `printeroffice`.`services` (`id`, `title`) VALUES (3, 'Продажа');
+INSERT INTO `printeroffice`.`services` (`id`, `title`) VALUES (4, 'Возврат');
 
 COMMIT;
 
@@ -406,11 +493,11 @@ COMMIT;
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `printeroffice`;
-INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `datetime`, `totalPrice`, `statusId`, `comment`) VALUES (1, 'test', '+79402231549', '2020-03-03 10:00:00', 3800, 3, NULL);
-INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `datetime`, `totalPrice`, `statusId`, `comment`) VALUES (2, 'test', '+79396795895', '2020-03-05 09:30:00', 1000, 3, NULL);
-INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `datetime`, `totalPrice`, `statusId`, `comment`) VALUES (3, 'test', '+79929236423', '2020-03-04 13:20:00', 1000, 3, NULL);
-INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `datetime`, `totalPrice`, `statusId`, `comment`) VALUES (4, 'test', '+79439467818', '2020-03-03 15:00:00', 3000, 3, NULL);
-INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `datetime`, `totalPrice`, `statusId`, `comment`) VALUES (5, 'test', '+79815174981', '2020-03-06 12:00:00', 3000, 3, NULL);
+INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `serviceId`, `startDateTime`, `lastModifiedDateTime`, `statusId`, `comment`) VALUES (1, 'test', '+79402231549', 3, '2020-03-03 10:00:00', NULL, 3, NULL);
+INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `serviceId`, `startDateTime`, `lastModifiedDateTime`, `statusId`, `comment`) VALUES (2, 'test', '+79396795895', 3, '2020-03-05 09:30:00', NULL, 3, NULL);
+INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `serviceId`, `startDateTime`, `lastModifiedDateTime`, `statusId`, `comment`) VALUES (3, 'test', '+79929236423', 2, '2020-03-04 13:20:00', NULL, 3, NULL);
+INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `serviceId`, `startDateTime`, `lastModifiedDateTime`, `statusId`, `comment`) VALUES (4, 'test', '+79439467818', 2, '2020-03-03 15:00:00', NULL, 3, NULL);
+INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `serviceId`, `startDateTime`, `lastModifiedDateTime`, `statusId`, `comment`) VALUES (5, 'test', '+79815174981', 2, '2020-03-06 12:00:00', NULL, 3, NULL);
 
 COMMIT;
 
@@ -427,18 +514,18 @@ COMMIT;
 
 
 -- -----------------------------------------------------
--- Data for table `printeroffice`.`deviceManufacs`
+-- Data for table `printeroffice`.`devicesManufacs`
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `printeroffice`;
-INSERT INTO `printeroffice`.`deviceManufacs` (`id`, `title`) VALUES (1, 'HP');
-INSERT INTO `printeroffice`.`deviceManufacs` (`id`, `title`) VALUES (2, 'ProfiLine');
-INSERT INTO `printeroffice`.`deviceManufacs` (`id`, `title`) VALUES (3, 'Brother');
-INSERT INTO `printeroffice`.`deviceManufacs` (`id`, `title`) VALUES (4, 'Sakura');
-INSERT INTO `printeroffice`.`deviceManufacs` (`id`, `title`) VALUES (5, 'Canon');
-INSERT INTO `printeroffice`.`deviceManufacs` (`id`, `title`) VALUES (6, 'Samsung');
-INSERT INTO `printeroffice`.`deviceManufacs` (`id`, `title`) VALUES (7, 'Xerox');
-INSERT INTO `printeroffice`.`deviceManufacs` (`id`, `title`) VALUES (8, 'Sony');
+INSERT INTO `printeroffice`.`devicesManufacs` (`id`, `title`) VALUES (1, 'HP');
+INSERT INTO `printeroffice`.`devicesManufacs` (`id`, `title`) VALUES (2, 'Brother');
+INSERT INTO `printeroffice`.`devicesManufacs` (`id`, `title`) VALUES (3, 'Canon');
+INSERT INTO `printeroffice`.`devicesManufacs` (`id`, `title`) VALUES (4, 'Xerox');
+INSERT INTO `printeroffice`.`devicesManufacs` (`id`, `title`) VALUES (5, 'Samsung');
+INSERT INTO `printeroffice`.`devicesManufacs` (`id`, `title`) VALUES (6, 'Sakura');
+INSERT INTO `printeroffice`.`devicesManufacs` (`id`, `title`) VALUES (7, 'Sony');
+INSERT INTO `printeroffice`.`devicesManufacs` (`id`, `title`) VALUES (8, 'Profline');
 
 COMMIT;
 
@@ -448,66 +535,66 @@ COMMIT;
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `printeroffice`;
-INSERT INTO `printeroffice`.`devices` (`id`, `model`, `deviceTypeId`, `deviceManufac`, `price`, `number`) VALUES (1, 'LaserJet Pro 400 M401dn', 2, 1, 12000, 0);
-INSERT INTO `printeroffice`.`devices` (`id`, `model`, `deviceTypeId`, `deviceManufac`, `price`, `number`) VALUES (2, 'LaserJet Pro P1102', 2, 1, 15000, 0);
-INSERT INTO `printeroffice`.`devices` (`id`, `model`, `deviceTypeId`, `deviceManufac`, `price`, `number`) VALUES (3, 'LaserJet Pro 400 M425dn', 2, 1, 17000, 0);
-INSERT INTO `printeroffice`.`devices` (`id`, `model`, `deviceTypeId`, `deviceManufac`, `price`, `number`) VALUES (4, 'Color LaserJet CP5225', 2, 1, 13500, 0);
-INSERT INTO `printeroffice`.`devices` (`id`, `model`, `deviceTypeId`, `deviceManufac`, `price`, `number`) VALUES (5, 'DesignJet 111', 2, 1, 30000, 0);
-INSERT INTO `printeroffice`.`devices` (`id`, `model`, `deviceTypeId`, `deviceManufac`, `price`, `number`) VALUES (6, 'C728D', 1, 2, 2000, 0);
-INSERT INTO `printeroffice`.`devices` (`id`, `model`, `deviceTypeId`, `deviceManufac`, `price`, `number`) VALUES (7, 'CF280X', 1, 3, 2500, 0);
-INSERT INTO `printeroffice`.`devices` (`id`, `model`, `deviceTypeId`, `deviceManufac`, `price`, `number`) VALUES (8, 'CE285A', 1, 5, 1700, 0);
-INSERT INTO `printeroffice`.`devices` (`id`, `model`, `deviceTypeId`, `deviceManufac`, `price`, `number`) VALUES (9, 'LC567XLBK', 1, 3, 1400, 0);
-INSERT INTO `printeroffice`.`devices` (`id`, `model`, `deviceTypeId`, `deviceManufac`, `price`, `number`) VALUES (10, 'CE041A', 1, 4, 1800, 0);
+INSERT INTO `printeroffice`.`devices` (`id`, `model`, `deviceManufacId`, `deviceTypeId`) VALUES (1, 'Laser Jet M4001', 1, 2);
+INSERT INTO `printeroffice`.`devices` (`id`, `model`, `deviceManufacId`, `deviceTypeId`) VALUES (2, 'HP Photocartridge Pro D200', 1, 1);
 
 COMMIT;
 
 
 -- -----------------------------------------------------
--- Data for table `printeroffice`.`servicesTypes`
+-- Data for table `printeroffice`.`storageStatuses`
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `printeroffice`;
-INSERT INTO `printeroffice`.`servicesTypes` (`id`, `title`, `price`) VALUES (1, 'Ремонт', 5000);
-INSERT INTO `printeroffice`.`servicesTypes` (`id`, `title`, `price`) VALUES (2, 'Заправка', 600);
-INSERT INTO `printeroffice`.`servicesTypes` (`id`, `title`, `price`) VALUES (3, 'Поставка', 0);
+INSERT INTO `printeroffice`.`storageStatuses` (`id`, `title`) VALUES (1, 'В наличии');
+INSERT INTO `printeroffice`.`storageStatuses` (`id`, `title`) VALUES (2, 'Отсутствует');
+INSERT INTO `printeroffice`.`storageStatuses` (`id`, `title`) VALUES (3, 'Зарезервирован');
 
 COMMIT;
 
+
 -- -----------------------------------------------------
--- Data for table `printeroffice`.`supplies`
+-- Data for table `printeroffice`.`destinations`
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `printeroffice`;
-INSERT INTO `printeroffice`.`supplies` (`id`, `datetime`, `deviceId`, `price`, `number`) VALUES (1, NULL, 1, 100000, 10);
-INSERT INTO `printeroffice`.`supplies` (`id`, `datetime`, `deviceId`, `price`, `number`) VALUES (2, NULL, 2, 200000, 10);
-INSERT INTO `printeroffice`.`supplies` (`id`, `datetime`, `deviceId`, `price`, `number`) VALUES (3, NULL, 3, 120000, 10);
-INSERT INTO `printeroffice`.`supplies` (`id`, `datetime`, `deviceId`, `price`, `number`) VALUES (4, NULL, 4, 231000, 10);
-INSERT INTO `printeroffice`.`supplies` (`id`, `datetime`, `deviceId`, `price`, `number`) VALUES (5, NULL, 5, 100000, 10);
+INSERT INTO `printeroffice`.`destinations` (`id`, `title`) VALUES (1, 'Реализация');
+INSERT INTO `printeroffice`.`destinations` (`id`, `title`) VALUES (2, 'Хранение');
 
 COMMIT;
+
+
+-- -----------------------------------------------------
+-- Data for table `printeroffice`.`storage`
+-- -----------------------------------------------------
+START TRANSACTION;
+USE `printeroffice`;
+INSERT INTO `printeroffice`.`storage` (`sn`, `deviceId`, `statusId`, `destinationId`, `price`) VALUES ('LJ6533', 1, 1, 1, 12000);
+INSERT INTO `printeroffice`.`storage` (`sn`, `deviceId`, `statusId`, `destinationId`, `price`) VALUES ('LJ6534', 1, 1, 1, 15000);
+INSERT INTO `printeroffice`.`storage` (`sn`, `deviceId`, `statusId`, `destinationId`, `price`) VALUES ('LJ6535', 1, 1, 1, 17000);
+INSERT INTO `printeroffice`.`storage` (`sn`, `deviceId`, `statusId`, `destinationId`, `price`) VALUES ('LJ6536', 1, 1, 1, 13500);
+INSERT INTO `printeroffice`.`storage` (`sn`, `deviceId`, `statusId`, `destinationId`, `price`) VALUES ('LJ6537', 1, 1, 1, 30000);
+INSERT INTO `printeroffice`.`storage` (`sn`, `deviceId`, `statusId`, `destinationId`, `price`) VALUES ('LJ6538', 1, 1, 1, 2000);
+INSERT INTO `printeroffice`.`storage` (`sn`, `deviceId`, `statusId`, `destinationId`, `price`) VALUES ('HPD001', 2, 2, 2, 2500);
+INSERT INTO `printeroffice`.`storage` (`sn`, `deviceId`, `statusId`, `destinationId`, `price`) VALUES ('HPD002', 2, 2, 2, 1700);
+INSERT INTO `printeroffice`.`storage` (`sn`, `deviceId`, `statusId`, `destinationId`, `price`) VALUES ('HPD003', 2, 2, 2, 1400);
+INSERT INTO `printeroffice`.`storage` (`sn`, `deviceId`, `statusId`, `destinationId`, `price`) VALUES ('HPD004', 2, 2, 2, 1800);
+
+COMMIT;
+
 
 -- -----------------------------------------------------
 -- Data for table `printeroffice`.`orderitems`
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `printeroffice`;
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`, `price`) VALUES (1, 1, 1, 1, DEFAULT, 1000);
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`, `price`) VALUES (2, 1, 3, 1, DEFAULT, 2000);
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`, `price`) VALUES (3, 1, 4, 1, DEFAULT, 1500);
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`, `price`) VALUES (4, 2, 1, 2, DEFAULT, 3000);
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`, `price`) VALUES (5, 3, 1, 2, DEFAULT, 12000);
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`, `price`) VALUES (6, 4, 3, 3, DEFAULT, 3000);
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`, `price`) VALUES (7, 5, 5, 3, DEFAULT, 6000);
-
-COMMIT;
-
-
--- -----------------------------------------------------
--- Data for table `printeroffice`.`admins`
--- -----------------------------------------------------
-START TRANSACTION;
-USE `printeroffice`;
-INSERT INTO `printeroffice`.`admins` (`id`, `emplLogin`) VALUES (1, 'admin');
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`) VALUES (1, 1, 'LJ6533');
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`) VALUES (2, 1, 'LJ6534');
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`) VALUES (3, 1, 'LJ6535');
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`) VALUES (4, 2, 'LJ6536');
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`) VALUES (5, 3, 'HPD001');
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`) VALUES (6, 4, 'HPD002');
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`) VALUES (7, 5, 'HPD003');
 
 COMMIT;
 
