@@ -158,6 +158,7 @@ DROP TABLE IF EXISTS `printeroffice`.`servicesTypes` ;
 CREATE TABLE IF NOT EXISTS `printeroffice`.`servicesTypes` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `title` VARCHAR(144) NOT NULL,
+  `price` INT NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB
 AUTO_INCREMENT = 17
@@ -175,6 +176,7 @@ CREATE TABLE IF NOT EXISTS `printeroffice`.`orderitems` (
   `deviceId` INT NOT NULL,
   `serviceId` INT NOT NULL,
   `statusId` INT NOT NULL DEFAULT 3,
+  `price` INT NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   INDEX `itemId_idx` (`deviceId` ASC) VISIBLE,
   INDEX `orderKey` (`orderId` ASC) VISIBLE,
@@ -465,9 +467,9 @@ COMMIT;
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `printeroffice`;
-INSERT INTO `printeroffice`.`servicesTypes` (`id`, `title`) VALUES (1, 'Ремонт');
-INSERT INTO `printeroffice`.`servicesTypes` (`id`, `title`) VALUES (2, 'Заправка');
-INSERT INTO `printeroffice`.`servicesTypes` (`id`, `title`) VALUES (3, 'Поставка');
+INSERT INTO `printeroffice`.`servicesTypes` (`id`, `title`, `price`) VALUES (1, 'Ремонт', 5000);
+INSERT INTO `printeroffice`.`servicesTypes` (`id`, `title`, `price`) VALUES (2, 'Заправка', 600);
+INSERT INTO `printeroffice`.`servicesTypes` (`id`, `title`, `price`) VALUES (3, 'Поставка', 0);
 
 COMMIT;
 
@@ -489,12 +491,23 @@ COMMIT;
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `printeroffice`;
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`) VALUES (1, 1, 1, 1, DEFAULT);
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`) VALUES (2, 1, 3, 1, DEFAULT);
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`) VALUES (3, 1, 4, 1, DEFAULT);
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`) VALUES (4, 2, 1, 2, DEFAULT);
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`) VALUES (5, 3, 1, 2, DEFAULT);
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`) VALUES (6, 4, 3, 3, DEFAULT);
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`) VALUES (7, 5, 5, 3, DEFAULT);
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`, `price`) VALUES (1, 1, 1, 1, DEFAULT, 1000);
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`, `price`) VALUES (2, 1, 3, 1, DEFAULT, 2000);
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`, `price`) VALUES (3, 1, 4, 1, DEFAULT, 1500);
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`, `price`) VALUES (4, 2, 1, 2, DEFAULT, 3000);
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`, `price`) VALUES (5, 3, 1, 2, DEFAULT, 12000);
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`, `price`) VALUES (6, 4, 3, 3, DEFAULT, 3000);
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `deviceId`, `serviceId`, `statusId`, `price`) VALUES (7, 5, 5, 3, DEFAULT, 6000);
 
 COMMIT;
+
+
+-- -----------------------------------------------------
+-- Data for table `printeroffice`.`admins`
+-- -----------------------------------------------------
+START TRANSACTION;
+USE `printeroffice`;
+INSERT INTO `printeroffice`.`admins` (`id`, `emplLogin`) VALUES (1, 'admin');
+
+COMMIT;
+
