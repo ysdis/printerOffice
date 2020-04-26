@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `printeroffice`.`customers` (
   `tel` VARCHAR(16) NOT NULL,
   `lastName` VARCHAR(45) NOT NULL,
   `firstName` VARCHAR(45) NOT NULL,
-  `middleName` VARCHAR(45) NULL DEFAULT '-',
+  `middleName` VARCHAR(45) NOT NULL DEFAULT '-',
   `birthdate` DATE NULL,
   `address` VARCHAR(200) NOT NULL,
   PRIMARY KEY (`tel`))
@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS `printeroffice`.`orders` (
   `lastModifiedDateTime` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `statusId` INT(11) NOT NULL DEFAULT 3,
   `comment` VARCHAR(255) NULL DEFAULT '-',
+  `totalPrice` INT NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   INDEX `emplKey_idx` (`emplLogin` ASC) VISIBLE,
   INDEX `statusKey_idx` (`statusId` ASC) VISIBLE,
@@ -204,7 +205,7 @@ CREATE TABLE IF NOT EXISTS `printeroffice`.`storage` (
   `deviceId` INT NOT NULL,
   `statusId` INT NOT NULL DEFAULT 1,
   `destinationId` INT NOT NULL DEFAULT 1,
-  `price` INT NOT NULL,
+  `price` INT NOT NULL DEFAULT 0,
   PRIMARY KEY (`sn`),
   INDEX `deviceKey_idx` (`deviceId` ASC) VISIBLE,
   INDEX `storStatKey_idx` (`statusId` ASC) VISIBLE,
@@ -238,6 +239,7 @@ CREATE TABLE IF NOT EXISTS `printeroffice`.`orderitems` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `orderId` INT NOT NULL,
   `storageSn` VARCHAR(50) NOT NULL,
+  `price` INT NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   INDEX `orderKey_idx` (`orderId` ASC) VISIBLE,
   CONSTRAINT `orderKey`
@@ -258,7 +260,12 @@ USE `printeroffice` ;
 -- -----------------------------------------------------
 -- Placeholder table for view `printeroffice`.`storageDetail`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `printeroffice`.`storageDetail` (`sn` INT, `'model'` INT, `'status'` INT, `'destination'` INT);
+CREATE TABLE IF NOT EXISTS `printeroffice`.`storageDetail` (`sn` INT, `'model'` INT, `'status'` INT, `'destination'` INT, `price` INT);
+
+-- -----------------------------------------------------
+-- Placeholder table for view `printeroffice`.`ordersDetailed`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `printeroffice`.`ordersDetailed` (`id` INT, `'ФИО сотрудника'` INT, `'Номер клиента'` INT, `'Услуга'` INT, `'Дата заказа'` INT, `'Статус'` INT, `'Общая стоимость'` INT);
 
 -- -----------------------------------------------------
 -- View `printeroffice`.`storageDetail`
@@ -271,12 +278,33 @@ SELECT
 	sn,
 	devices.model AS 'model',
     storageStatuses.title AS 'status',
-    destinations.title AS 'destination'
+    destinations.title AS 'destination',
+    price
 FROM 
 	storage
 JOIN storagestatuses ON storagestatuses.id = storage.statusId
 JOIN destinations ON destinations.id = storage.destinationId
 JOIN devices ON devices.id = storage.deviceId;
+
+-- -----------------------------------------------------
+-- View `printeroffice`.`ordersDetailed`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `printeroffice`.`ordersDetailed`;
+DROP VIEW IF EXISTS `printeroffice`.`ordersDetailed` ;
+USE `printeroffice`;
+CREATE  OR REPLACE VIEW `ordersDetailed` AS SELECT
+	orders.id,
+    CONCAT(employees.lastName, ' ', LEFT(employees.firstName, 1), ' ', LEFT(employees.middleName, 1)) AS 'ФИО сотрудника',
+    custId AS 'Номер клиента',
+    services.title AS 'Услуга',
+    date_format(orders.startDateTime, '%d %M %k:%i') AS 'Дата заказа',
+    orderStatuses.title AS 'Статус',
+    CONCAT(format(orders.totalPrice, 0), ' ₽') AS 'Общая стоимость'
+FROM orders
+	JOIN services ON orders.serviceId = services.id
+    JOIN orderStatuses ON orders.statusId = orderStatuses.id
+    JOIN employees ON employees.login = orders.emplLogin
+ORDER BY 5;
 USE `printeroffice`;
 
 DELIMITER $$
@@ -351,6 +379,28 @@ END$$
 
 
 USE `printeroffice`$$
+DROP TRIGGER IF EXISTS `printeroffice`.`storage_BEFORE_INSERT` $$
+USE `printeroffice`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `printeroffice`.`storage_BEFORE_INSERT` BEFORE INSERT ON `storage` FOR EACH ROW
+BEGIN
+	IF NEW.destinationId = 2 THEN -- Когда предназначение хранение
+		SET NEW.statusId = 2;
+    END IF;
+END$$
+
+
+USE `printeroffice`$$
+DROP TRIGGER IF EXISTS `printeroffice`.`storage_BEFORE_UPDATE` $$
+USE `printeroffice`$$
+CREATE DEFINER = CURRENT_USER TRIGGER `printeroffice`.`storage_BEFORE_UPDATE` BEFORE UPDATE ON `storage` FOR EACH ROW
+BEGIN
+	IF NEW.statusId = 2 and OLD.destinationId = 2 THEN -- Если устройство на хранении уходит со склада
+		SET NEW.price = 0; -- Обнуляем его стоимость
+	END IF;
+END$$
+
+
+USE `printeroffice`$$
 DROP TRIGGER IF EXISTS `printeroffice`.`orderitems_BEFORE_INSERT` $$
 USE `printeroffice`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `printeroffice`.`orderitems_BEFORE_INSERT` BEFORE INSERT ON `orderitems` FOR EACH ROW
@@ -372,6 +422,7 @@ BEGIN
     IF serviceOfOrder = 3 THEN -- Когда "Продажа"
 		IF storageSnStatus = 1 and storageSnDestination = 1 THEN -- Если товар в наличии и предназначение "Реализация"
 			UPDATE storage SET statusId = 3 WHERE sn = NEW.storageSn; -- Резервируется на складе
+            SET NEW.price = (SELECT price FROM storage WHERE sn = NEW.storageSn); -- Цена на товар сохраняется в заказе
         ELSE
 			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Товар отсутсвует или зарезервирован!';
         END IF;
@@ -380,16 +431,20 @@ BEGIN
 	IF serviceOfOrder = 1 or serviceOfOrder = 2 THEN -- Когда "Ремонт","Заправка"
 		IF storageSnStatus = 2 and storageSnDestination = 2 THEN -- Если товар отсутствует и предназначение "Хранение"
 			UPDATE storage SET statusId = 1 WHERE sn = NEW.storageSn; -- Попадает на склад
+            SET NEW.price = (SELECT price FROM storage WHERE sn = NEW.storageSn); -- Цена за работу сохраняется в заказе
         ELSE
 			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ошибка, устройство не может быть добавлено к заказу (Уже есть на складе, предназначен для реализации)!';
         END IF;
 	END IF;
     
 	IF serviceOfOrder = 4 THEN -- Когда "Возврат"
-		IF (storageSnStatus = 1 or storageSnStatus = 3) and storageSnDestination != 1 THEN -- Если товар присутствует или зарезервирован и предназначение не "Реализация"
-			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ошибка, устройство возвращено!';
+		IF storageSnStatus = 1 or storageSnStatus = 3 or storageSnDestination = 2 THEN -- Если товар присутствует или зарезервирован
+			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ошибка, устройство не может быть возвращено!';
         END IF;
 	END IF;
+    
+    -- Обновляем общую стоимость заказа
+    UPDATE orders SET totalPrice = totalPrice + NEW.price WHERE id = NEW.orderId;
 END$$
 
 
@@ -405,6 +460,9 @@ BEGIN
 	IF NEW.orderId != OLD.orderId THEN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Изменение номера заказа услуги невозможно!';
 	END IF;
+    
+    -- Обновляем общую стоимость заказа
+    UPDATE orders SET totalPrice = totalPrice + NEW.price WHERE id = NEW.orderId;
 END$$
 
 
@@ -458,7 +516,7 @@ COMMIT;
 START TRANSACTION;
 USE `printeroffice`;
 INSERT INTO `printeroffice`.`employees` (`login`, `password`, `lastName`, `firstName`, `middleName`, `fired`, `isAdmin`) VALUES ('test', 'test', 'Калугин', 'Виктор', 'Иванович', DEFAULT, DEFAULT);
-INSERT INTO `printeroffice`.`employees` (`login`, `password`, `lastName`, `firstName`, `middleName`, `fired`, `isAdmin`) VALUES ('admin', 'admin', 'Администрор', 'ИС', NULL, DEFAULT, 1);
+INSERT INTO `printeroffice`.`employees` (`login`, `password`, `lastName`, `firstName`, `middleName`, `fired`, `isAdmin`) VALUES ('admin', 'admin', 'Администрор', 'ИС', '-', DEFAULT, 1);
 
 COMMIT;
 
@@ -493,11 +551,11 @@ COMMIT;
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `printeroffice`;
-INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `serviceId`, `startDateTime`, `lastModifiedDateTime`, `statusId`, `comment`) VALUES (1, 'test', '+79402231549', 3, '2020-03-03 10:00:00', NULL, 3, NULL);
-INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `serviceId`, `startDateTime`, `lastModifiedDateTime`, `statusId`, `comment`) VALUES (2, 'test', '+79396795895', 3, '2020-03-05 09:30:00', NULL, 3, NULL);
-INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `serviceId`, `startDateTime`, `lastModifiedDateTime`, `statusId`, `comment`) VALUES (3, 'test', '+79929236423', 2, '2020-03-04 13:20:00', NULL, 3, NULL);
-INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `serviceId`, `startDateTime`, `lastModifiedDateTime`, `statusId`, `comment`) VALUES (4, 'test', '+79439467818', 2, '2020-03-03 15:00:00', NULL, 3, NULL);
-INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `serviceId`, `startDateTime`, `lastModifiedDateTime`, `statusId`, `comment`) VALUES (5, 'test', '+79815174981', 2, '2020-03-06 12:00:00', NULL, 3, NULL);
+INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `serviceId`, `startDateTime`, `lastModifiedDateTime`, `statusId`, `comment`, `totalPrice`) VALUES (1, 'test', '+79402231549', 3, '2020-03-03 10:00:00', NULL, 3, '-', DEFAULT);
+INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `serviceId`, `startDateTime`, `lastModifiedDateTime`, `statusId`, `comment`, `totalPrice`) VALUES (2, 'test', '+79396795895', 3, '2020-03-05 09:30:00', NULL, 3, '-', DEFAULT);
+INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `serviceId`, `startDateTime`, `lastModifiedDateTime`, `statusId`, `comment`, `totalPrice`) VALUES (3, 'admin', '+79929236423', 2, '2020-03-04 13:20:00', NULL, 3, '-', DEFAULT);
+INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `serviceId`, `startDateTime`, `lastModifiedDateTime`, `statusId`, `comment`, `totalPrice`) VALUES (4, 'admin', '+79439467818', 2, '2020-03-03 15:00:00', NULL, 3, '-', DEFAULT);
+INSERT INTO `printeroffice`.`orders` (`id`, `emplLogin`, `custId`, `serviceId`, `startDateTime`, `lastModifiedDateTime`, `statusId`, `comment`, `totalPrice`) VALUES (5, 'test', '+79815174981', 2, '2020-03-06 12:00:00', NULL, 3, '-', DEFAULT);
 
 COMMIT;
 
@@ -588,13 +646,13 @@ COMMIT;
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `printeroffice`;
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`) VALUES (1, 1, 'LJ6533');
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`) VALUES (2, 1, 'LJ6534');
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`) VALUES (3, 1, 'LJ6535');
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`) VALUES (4, 2, 'LJ6536');
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`) VALUES (5, 3, 'HPD001');
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`) VALUES (6, 4, 'HPD002');
-INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`) VALUES (7, 5, 'HPD003');
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`, `price`) VALUES (1, 1, 'LJ6533', DEFAULT);
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`, `price`) VALUES (2, 1, 'LJ6534', DEFAULT);
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`, `price`) VALUES (3, 1, 'LJ6535', DEFAULT);
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`, `price`) VALUES (4, 2, 'LJ6536', DEFAULT);
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`, `price`) VALUES (5, 3, 'HPD001', DEFAULT);
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`, `price`) VALUES (6, 4, 'HPD002', DEFAULT);
+INSERT INTO `printeroffice`.`orderitems` (`id`, `orderId`, `storageSn`, `price`) VALUES (7, 5, 'HPD003', DEFAULT);
 
 COMMIT;
 
