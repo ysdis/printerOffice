@@ -128,17 +128,17 @@ DROP TABLE IF EXISTS `printeroffice`.`deviceTypes` ;
 
 CREATE TABLE IF NOT EXISTS `printeroffice`.`deviceTypes` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `title` VARCHAR(144) NOT NULL,
+  `title` VARCHAR(50) NOT NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `printeroffice`.`devicesManufacs`
+-- Table `printeroffice`.`deviceManufacs`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `printeroffice`.`devicesManufacs` ;
+DROP TABLE IF EXISTS `printeroffice`.`deviceManufacs` ;
 
-CREATE TABLE IF NOT EXISTS `printeroffice`.`devicesManufacs` (
+CREATE TABLE IF NOT EXISTS `printeroffice`.`deviceManufacs` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `title` VARCHAR(50) NOT NULL,
   PRIMARY KEY (`id`))
@@ -165,9 +165,9 @@ CREATE TABLE IF NOT EXISTS `printeroffice`.`devices` (
     ON UPDATE CASCADE,
   CONSTRAINT `DevManKey`
     FOREIGN KEY (`deviceManufacId`)
-    REFERENCES `printeroffice`.`devicesManufacs` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    REFERENCES `printeroffice`.`deviceManufacs` (`id`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE)
 ENGINE = InnoDB;
 
 
@@ -260,12 +260,27 @@ USE `printeroffice` ;
 -- -----------------------------------------------------
 -- Placeholder table for view `printeroffice`.`storageDetail`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `printeroffice`.`storageDetail` (`sn` INT, `'model'` INT, `'status'` INT, `'destination'` INT, `price` INT);
+CREATE TABLE IF NOT EXISTS `printeroffice`.`storageDetail` (`sn` INT, `'Модель'` INT, `'Статус'` INT, `'Предназначение'` INT, `'Стоимость'` INT);
 
 -- -----------------------------------------------------
 -- Placeholder table for view `printeroffice`.`ordersDetailed`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `printeroffice`.`ordersDetailed` (`id` INT, `'ФИО сотрудника'` INT, `'Номер клиента'` INT, `'Услуга'` INT, `'Дата заказа'` INT, `'Статус'` INT, `'Общая стоимость'` INT);
+
+-- -----------------------------------------------------
+-- Placeholder table for view `printeroffice`.`customersDetailed`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `printeroffice`.`customersDetailed` (`'ФИО клиента'` INT, `'Номер телефона'` INT, `'Дата рождения'` INT, `'Адрес проживания'` INT);
+
+-- -----------------------------------------------------
+-- Placeholder table for view `printeroffice`.`devicesDetailed`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `printeroffice`.`devicesDetailed` (`id` INT, `'Модель'` INT, `'Производитель'` INT, `'Тип устройства'` INT);
+
+-- -----------------------------------------------------
+-- Placeholder table for view `printeroffice`.`employeesDetailed`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `printeroffice`.`employeesDetailed` (`login` INT, `'ФИО сотрудника'` INT, `'Статус'` INT, `'Администратор'` INT);
 
 -- -----------------------------------------------------
 -- View `printeroffice`.`storageDetail`
@@ -276,10 +291,10 @@ USE `printeroffice`;
 CREATE  OR REPLACE VIEW `storageDetail` AS
 SELECT
 	sn,
-	devices.model AS 'model',
-    storageStatuses.title AS 'status',
-    destinations.title AS 'destination',
-    price
+	devices.model AS 'Модель',
+    storageStatuses.title AS 'Статус',
+    destinations.title AS 'Предназначение',
+    CONCAT(format(price, 0), ' ₽') AS 'Стоимость'
 FROM 
 	storage
 JOIN storagestatuses ON storagestatuses.id = storage.statusId
@@ -305,6 +320,55 @@ FROM orders
     JOIN orderStatuses ON orders.statusId = orderStatuses.id
     JOIN employees ON employees.login = orders.emplLogin
 ORDER BY 5;
+
+-- -----------------------------------------------------
+-- View `printeroffice`.`customersDetailed`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `printeroffice`.`customersDetailed`;
+DROP VIEW IF EXISTS `printeroffice`.`customersDetailed` ;
+USE `printeroffice`;
+CREATE  OR REPLACE VIEW `customersDetailed` AS SELECT 
+	concat(lastName, ' ', firstName, ' ', middleName) AS 'ФИО клиента',
+    tel AS 'Номер телефона',
+    date_format(birthdate, '%d %M %Y') AS 'Дата рождения',
+    address AS 'Адрес проживания'
+FROM customers
+ORDER BY 1;
+
+-- -----------------------------------------------------
+-- View `printeroffice`.`devicesDetailed`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `printeroffice`.`devicesDetailed`;
+DROP VIEW IF EXISTS `printeroffice`.`devicesDetailed` ;
+USE `printeroffice`;
+CREATE  OR REPLACE VIEW `devicesDetailed` AS SELECT
+	devices.id,
+    devices.model AS 'Модель',
+    deviceManufacs.title AS 'Производитель',
+    deviceTypes.title AS 'Тип устройства'
+FROM devices
+JOIN deviceManufacs ON deviceManufacs.id = devices.deviceManufacId
+JOIN deviceTypes ON deviceTypes.id = devices.deviceTypeId;
+
+-- -----------------------------------------------------
+-- View `printeroffice`.`employeesDetailed`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `printeroffice`.`employeesDetailed`;
+DROP VIEW IF EXISTS `printeroffice`.`employeesDetailed` ;
+USE `printeroffice`;
+CREATE  OR REPLACE VIEW `employeesDetailed` AS SELECT
+	login,
+    CONCAT(lastName, ' ', firstName, ' ', middleName) AS 'ФИО сотрудника',
+    CASE
+		WHEN fired = 1 THEN 'Уволен(а)'
+        WHEN fired = 0 THEN 'Работает'
+	END AS 'Статус',
+    CASE
+		WHEN isAdmin = 1 THEN 'Да'
+        WHEN isAdmin = 0 THEN ''
+	END AS 'Администратор'
+FROM
+	employees;
 USE `printeroffice`;
 
 DELIMITER $$
@@ -370,7 +434,6 @@ BEGIN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'После отмены или завершения изменение статуса заказа невозможно!';
     END IF;
     
-    
 	SELECT fired INTO isEmplWork FROM employees WHERE employees.login = NEW.emplLogin;
 	IF isEmplWork = 1 THEN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Уволенные сотрудники не могут выполнять заказы!';
@@ -394,7 +457,7 @@ DROP TRIGGER IF EXISTS `printeroffice`.`storage_BEFORE_UPDATE` $$
 USE `printeroffice`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `printeroffice`.`storage_BEFORE_UPDATE` BEFORE UPDATE ON `storage` FOR EACH ROW
 BEGIN
-	IF NEW.statusId = 2 and OLD.destinationId = 2 THEN -- Если устройство на хранении уходит со склада
+	IF OLD.statusId != NEW.statusId and NEW.statusId = 2 and OLD.destinationId = 2 THEN -- Если устройство на хранении уходит со склада
 		SET NEW.price = 0; -- Обнуляем его стоимость
 	END IF;
 END$$
@@ -472,7 +535,9 @@ USE `printeroffice`$$
 CREATE DEFINER = CURRENT_USER TRIGGER `printeroffice`.`orderitems_BEFORE_DELETE` BEFORE DELETE ON `orderitems` FOR EACH ROW
 BEGIN
 	DECLARE statusOfOrder INT;
+    DECLARE serviceOfOrder INT;
 	SELECT statusId INTO statusOfOrder FROM orders WHERE id = OLD.orderId;
+    SELECT serviceId INTO serviceOfOrder FROM orders WHERE id = OLD.orderId;
     
 	IF statusOfOrder != 3 THEN
 		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Удаление услуг в завершенном/отмененном заказ невозможно!';
@@ -572,18 +637,18 @@ COMMIT;
 
 
 -- -----------------------------------------------------
--- Data for table `printeroffice`.`devicesManufacs`
+-- Data for table `printeroffice`.`deviceManufacs`
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `printeroffice`;
-INSERT INTO `printeroffice`.`devicesManufacs` (`id`, `title`) VALUES (1, 'HP');
-INSERT INTO `printeroffice`.`devicesManufacs` (`id`, `title`) VALUES (2, 'Brother');
-INSERT INTO `printeroffice`.`devicesManufacs` (`id`, `title`) VALUES (3, 'Canon');
-INSERT INTO `printeroffice`.`devicesManufacs` (`id`, `title`) VALUES (4, 'Xerox');
-INSERT INTO `printeroffice`.`devicesManufacs` (`id`, `title`) VALUES (5, 'Samsung');
-INSERT INTO `printeroffice`.`devicesManufacs` (`id`, `title`) VALUES (6, 'Sakura');
-INSERT INTO `printeroffice`.`devicesManufacs` (`id`, `title`) VALUES (7, 'Sony');
-INSERT INTO `printeroffice`.`devicesManufacs` (`id`, `title`) VALUES (8, 'Profline');
+INSERT INTO `printeroffice`.`deviceManufacs` (`id`, `title`) VALUES (1, 'HP');
+INSERT INTO `printeroffice`.`deviceManufacs` (`id`, `title`) VALUES (2, 'Brother');
+INSERT INTO `printeroffice`.`deviceManufacs` (`id`, `title`) VALUES (3, 'Canon');
+INSERT INTO `printeroffice`.`deviceManufacs` (`id`, `title`) VALUES (4, 'Xerox');
+INSERT INTO `printeroffice`.`deviceManufacs` (`id`, `title`) VALUES (5, 'Samsung');
+INSERT INTO `printeroffice`.`deviceManufacs` (`id`, `title`) VALUES (6, 'Sakura');
+INSERT INTO `printeroffice`.`deviceManufacs` (`id`, `title`) VALUES (7, 'Sony');
+INSERT INTO `printeroffice`.`deviceManufacs` (`id`, `title`) VALUES (8, 'Profline');
 
 COMMIT;
 
