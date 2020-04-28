@@ -32,6 +32,7 @@ namespace PrinterOffice {
 
                 if (LoginBox.Text == Convert.ToString(Application.Current.Properties["emplLogin"]) && !isRecover) {
                     MessageBox.Show("Увольнение собственного аккаунта запрещено!");
+                    return;
                 }
 
                 entity.login = LoginBox.Text;

@@ -210,6 +210,7 @@ namespace PrinterOffice {
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void TypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+            if(_loading) return;
             _order.serviceId = Convert.ToInt16(ServiceTypeComboBox.SelectedValue);
         }
 

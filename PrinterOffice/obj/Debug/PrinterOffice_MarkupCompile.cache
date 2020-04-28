@@ -4,17 +4,17 @@
 winexe
 C#
 .cs
-C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\
+C:\Users\User1\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\
 PrinterOffice
 none
 false
 DEBUG;TRACE
-C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\App.xaml
+C:\Users\User1\Source\Repos\ysdis\printerOffice\PrinterOffice\App.xaml
 131725222506
 
 29-1274103287
-26-717145418
+261920404892
 Windows\EmployeeControl.xaml;Windows\EmployeeJobStatusControl.xaml;Windows\StorageItemControl.xaml;Windows\DeviceManufacControl.xaml;Windows\DeviceTypeControl.xaml;Windows\DeviceControl.xaml;Windows\AddItemToOrderControl.xaml;Windows\AdminPanel.xaml;Windows\Browser.xaml;Windows\CustomerControl.xaml;Windows\NotificationWindow.xaml;UserControls\OrderControlP.xaml;MainWindow.xaml;
 
-True
+False
 

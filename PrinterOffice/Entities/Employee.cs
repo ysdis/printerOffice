@@ -58,6 +58,7 @@ namespace PrinterOffice {
                 new MySqlParameter("@ADMIN", isAdmin)
             });
         }
+
         public Response update() {
             return Database.execute("UPDATE employees SET login = @LOGIN, password = @PASS, lastName = @LAST, firstName = @FIRST, middleName = @MIDDLE, fired = @FIRED, isAdmin = @ADMIN WHERE login = @OLDLOGIN;", new[] {
                 new MySqlParameter("@LOGIN", login),

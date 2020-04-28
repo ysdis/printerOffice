@@ -4,17 +4,17 @@
 winexe
 C#
 .cs
-C:\Users\yaros\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Release\
+C:\Users\User1\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Release\
 PrinterOffice
 none
 false
 TRACE
-C:\Users\yaros\Source\Repos\ysdis\printerOffice\PrinterOffice\App.xaml
-15-1477696457
+C:\Users\User1\Source\Repos\ysdis\printerOffice\PrinterOffice\App.xaml
+131725222506
 
-261417423356
-26399984582
-OrderItemControl.xaml;Windows\AdminPanel.xaml;Browser.xaml;ClientControl.xaml;NotificationWindow.xaml;UserControls\OrderControlP.xaml;SearchControl.xaml;ExtraDescription.xaml;MainWindow.xaml;OrderControl.xaml;ServiceControl.xaml;ServiceTypeControl.xaml;ServiceExtraItem.xaml;ServiceItem.xaml;ServicesWindow.xaml;
+29-1274103287
+261920404892
+Windows\EmployeeControl.xaml;Windows\EmployeeJobStatusControl.xaml;Windows\StorageItemControl.xaml;Windows\DeviceManufacControl.xaml;Windows\DeviceTypeControl.xaml;Windows\DeviceControl.xaml;Windows\AddItemToOrderControl.xaml;Windows\AdminPanel.xaml;Windows\Browser.xaml;Windows\CustomerControl.xaml;Windows\NotificationWindow.xaml;UserControls\OrderControlP.xaml;MainWindow.xaml;
 
 True
 
