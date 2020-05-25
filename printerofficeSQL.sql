@@ -283,6 +283,11 @@ CREATE TABLE IF NOT EXISTS `printeroffice`.`devicesDetailed` (`id` INT, `'Мод
 CREATE TABLE IF NOT EXISTS `printeroffice`.`employeesDetailed` (`login` INT, `'ФИО сотрудника'` INT, `'Статус'` INT, `'Администратор'` INT);
 
 -- -----------------------------------------------------
+-- Placeholder table for view `printeroffice`.`devicesSelection`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `printeroffice`.`devicesSelection` (`sn` INT, `'Модель'` INT, `'Тип'` INT, `'Статус'` INT, `'Предназначение'` INT, `'Стоимость'` INT);
+
+-- -----------------------------------------------------
 -- View `printeroffice`.`storageDetail`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `printeroffice`.`storageDetail`;
@@ -369,6 +374,26 @@ CREATE  OR REPLACE VIEW `employeesDetailed` AS SELECT
 	END AS 'Администратор'
 FROM
 	employees;
+
+-- -----------------------------------------------------
+-- View `printeroffice`.`devicesSelection`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `printeroffice`.`devicesSelection`;
+DROP VIEW IF EXISTS `printeroffice`.`devicesSelection` ;
+USE `printeroffice`;
+CREATE  OR REPLACE VIEW `devicesSelection` AS SELECT
+	sn,
+	devices.model AS 'Модель',
+    deviceTypes.title AS 'Тип',
+    storageStatuses.title AS 'Статус',
+    destinations.title AS 'Предназначение',
+    storage.price AS 'Стоимость'
+FROM 
+	storage
+JOIN storagestatuses ON storagestatuses.id = storage.statusId
+JOIN destinations ON destinations.id = storage.destinationId
+JOIN devices ON devices.id = storage.deviceId
+JOIN deviceTypes ON devices.deviceTypeId = deviceTypes.id;
 USE `printeroffice`;
 
 DELIMITER $$
