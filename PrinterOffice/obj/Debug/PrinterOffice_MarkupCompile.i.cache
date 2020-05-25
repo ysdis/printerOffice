@@ -10,11 +10,11 @@ none
 false
 DEBUG;TRACE
 C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\App.xaml
-131725222506
+14-2104072367
 
-301813594781
+31-222066863
 26-717145418
-Windows\EmployeeControl.xaml;Windows\EmployeeJobStatusControl.xaml;Windows\StorageItemControl.xaml;Windows\DeviceManufacControl.xaml;Windows\DeviceTypeControl.xaml;Windows\DeviceControl.xaml;Windows\AddItemToOrderControl.xaml;Windows\AdminPanel.xaml;Windows\Browser.xaml;Windows\CustomerControl.xaml;Windows\NotificationWindow.xaml;UserControls\OrderControlP.xaml;MainWindow.xaml;
+CreateOrder.xaml;Windows\EmployeeControl.xaml;Windows\EmployeeJobStatusControl.xaml;Windows\StorageItemControl.xaml;Windows\DeviceManufacControl.xaml;Windows\DeviceTypeControl.xaml;Windows\DeviceControl.xaml;Windows\QuickSearch.xaml;Windows\AdminPanel.xaml;Windows\Browser.xaml;Windows\CustomerControl.xaml;Windows\NotificationWindow.xaml;UserControls\OrderControl.xaml;MainWindow.xaml;
 
 False
 

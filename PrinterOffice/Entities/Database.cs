@@ -11,7 +11,7 @@ namespace PrinterOffice {
         }
 
         /// ConnStr cодержит информацию для подключению к БД
-        private const string ConnStr = "Database=printeroffice;Server=localhost;User=root;Password=qwerty12;Port=3302";
+        private const string ConnStr = "Database=printeroffice;Server=localhost;User=root;Password=qwerty78;Port=3305";
 
         //--------------------------------  МЕТОДЫ  ------------------------------------//
 

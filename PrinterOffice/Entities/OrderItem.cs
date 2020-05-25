@@ -15,6 +15,11 @@ namespace PrinterOffice {
             if (id != -1) this.id = id;
         }
 
+        public OrderItem(string storageSn, int price = 0) { // Просто храним информацию об устройстве в заказе
+            this.storageSn = storageSn;
+            this.price = price;
+        }
+
         public OrderItem(int id) { // Когда нам необходимо получить услугу в заказе
             this.id = id;
             download();

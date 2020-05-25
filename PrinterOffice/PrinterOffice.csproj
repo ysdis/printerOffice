@@ -78,6 +78,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CreateOrder.xaml.cs">
+      <DependentUpon>CreateOrder.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Windows\EmployeeControl.xaml.cs">
       <DependentUpon>EmployeeControl.xaml</DependentUpon>
     </Compile>
@@ -102,8 +105,8 @@
     <Compile Include="Entities\DeviceType.cs" />
     <Compile Include="Entities\Device.cs" />
     <Compile Include="Entities\OrderItem.cs" />
-    <Compile Include="Windows\AddItemToOrderControl.xaml.cs">
-      <DependentUpon>AddItemToOrderControl.xaml</DependentUpon>
+    <Compile Include="Windows\QuickSearch.xaml.cs">
+      <DependentUpon>QuickSearch.xaml</DependentUpon>
     </Compile>
     <Compile Include="Windows\AdminPanel.xaml.cs">
       <DependentUpon>AdminPanel.xaml</DependentUpon>
@@ -119,8 +122,8 @@
       <DependentUpon>NotificationWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Entities\Order.cs" />
-    <Compile Include="UserControls\OrderControlP.xaml.cs">
-      <DependentUpon>OrderControlP.xaml</DependentUpon>
+    <Compile Include="UserControls\OrderControl.xaml.cs">
+      <DependentUpon>OrderControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -131,6 +134,10 @@
     <Compile Include="SqlQueries.cs" />
     <Compile Include="Entities\Database.cs" />
     <Compile Include="Utilities.cs" />
+    <Page Include="CreateOrder.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Windows\EmployeeControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -155,7 +162,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Windows\AddItemToOrderControl.xaml">
+    <Page Include="Windows\QuickSearch.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -175,7 +182,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="UserControls\OrderControlP.xaml">
+    <Page Include="UserControls\OrderControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

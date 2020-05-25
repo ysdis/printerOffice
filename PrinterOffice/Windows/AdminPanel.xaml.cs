@@ -38,7 +38,7 @@ namespace PrinterOffice {
                 DetailsStack.Children.RemoveAt(0);
             }
             LabelHint.Visibility = Visibility.Hidden;
-            var card = new OrderControlP(((DataRowView)OrdersDataGrid.SelectedItem).Row.Field<int>("id").ToString());
+            var card = new OrderControl(((DataRowView)OrdersDataGrid.SelectedItem).Row.Field<int>("id").ToString(), this);
             DetailsStack.Children.Add(card);
         }
 
@@ -82,7 +82,11 @@ namespace PrinterOffice {
         }
 
         private void createOrder(object sender, RoutedEventArgs e) {
-            throw new NotImplementedException();
+            var dialog = new CreateOrder();
+            dialog.ShowDialog();
+            if(dialog.DialogResult.HasValue && dialog.DialogResult.Value) {
+                refresh();
+            }
         }
 
         private void openCustomersControl(object sender, RoutedEventArgs e) {
@@ -119,7 +123,7 @@ namespace PrinterOffice {
         }
 
         private void openEmployeeBrowser(object sender, RoutedEventArgs e) {
-            var window = new Browser("Сотрудники", SqlQueries.GET_EMPLOYEES, Browser.TYPE_EMPLOYEES) {Owner = this};
+            var window = new Browser("Сотрудники", SqlQueries.GET_ALL_EMPLOYEES, Browser.TYPE_EMPLOYEES) {Owner = this};
             window.Show();
         }
 

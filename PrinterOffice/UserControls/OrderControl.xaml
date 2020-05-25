@@ -1,10 +1,10 @@
-﻿<UserControl x:Class="PrinterOffice.OrderControlP"
+﻿<UserControl x:Class="PrinterOffice.OrderControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             Width="450" Loaded="loadedEvent">
+             MinWidth="450">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
@@ -34,18 +34,18 @@
                 <Rectangle Grid.Row="0" Grid.Column="0" Grid.RowSpan="10" Grid.ColumnSpan="5" Fill="White" RadiusX="25" RadiusY="25"/>
 
                 <Label Grid.Row="0" Grid.Column="0" x:Name="label1" Content="Клиент" HorizontalAlignment="Right" Margin="20,0,0,0" FontSize="14" FontWeight="Bold" VerticalAlignment="Bottom"/>
-                <TextBox Grid.Row="0" Grid.Column="1" x:Name="CustomerTel" Margin="10,20,10,0" TextWrapping="Wrap" MaxLength="16" FontSize="14" Grid.ColumnSpan="2" VerticalAlignment="Center" TextChanged="CustomerTel_TextChanged"/>
+                <TextBox IsEnabled="False" Grid.Row="0" Grid.Column="1" x:Name="CustomerTel" Margin="10,20,10,0" TextWrapping="Wrap" MaxLength="16" FontSize="14" Grid.ColumnSpan="2" VerticalAlignment="Center" TextChanged="CustomerTel_TextChanged"/>
                 <Button Grid.Column="3" Grid.Row="0" x:Name="SearchCustomer" Content="Поиск" HorizontalAlignment="Left" Style="{DynamicResource LightAction}" Margin="0,23,0,2.8" Click="openClientSearch" VerticalAlignment="Center"/>
 
                 <Label Grid.Row="1" Grid.Column="0" x:Name="LabelEmpl" Content="Сотрудник" HorizontalAlignment="Right" Margin="20,0,0,0" FontSize="14" FontWeight="Bold" VerticalAlignment="Bottom"/>
-                <TextBox Grid.Row="1" Grid.Column="1" x:Name="RespEmpl" Margin="10,10,10,0" TextWrapping="Wrap" MaxLength="16" FontSize="14" Grid.ColumnSpan="2" VerticalAlignment="Center" TextChanged="RespEmpl_TextChanged"/>
-                <Button Grid.Row="1" Grid.Column="3" x:Name="SearchEmployeeBtn" Content="Поиск" HorizontalAlignment="Left" Style="{DynamicResource LightAction}" Margin="0,13.2,0,3.2" Click="openClientSearch" VerticalAlignment="Center"/>
+                <TextBox Grid.Row="1" IsEnabled="False" Grid.Column="1" x:Name="RespEmpl" Margin="10,10,10,0" TextWrapping="Wrap" MaxLength="16" FontSize="14" Grid.ColumnSpan="2" VerticalAlignment="Center" TextChanged="RespEmpl_TextChanged"/>
+                <Button Grid.Row="1" Grid.Column="3" Visibility="Hidden" x:Name="SearchEmployeeBtn" Content="Поиск" HorizontalAlignment="Left" Style="{DynamicResource LightAction}" Margin="0,13.2,0,3.2" Click="openEmployeeSearch" VerticalAlignment="Center"/>
 
                 <Label Grid.Row="2" Grid.Column="0" x:Name="LabelService" Content="Услуга" HorizontalAlignment="Right" Margin="20,10,0,0" FontSize="14" FontWeight="Bold" VerticalAlignment="Bottom"/>
                 <ComboBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" x:Name="ServiceTypeComboBox" Margin="10,10,10,0" VerticalAlignment="Center" SelectionChanged="TypeComboBox_SelectionChanged" />
 
                 <Label Grid.Row="3" Grid.Column="0" x:Name="label2" Content="Устройства" HorizontalAlignment="Right" Margin="20,10,0,0" FontSize="14" FontWeight="Bold" VerticalAlignment="Top"/>
-                <DataGrid Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Grid.RowSpan="3" IsReadOnly="True" ColumnWidth="*" Height="220" CanUserReorderColumns="False" x:Name="OrderedDevices" Margin="10" AutoGeneratingColumn="OrderedServices_AutoGeneratingColumn" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                <DataGrid Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Grid.RowSpan="3" IsReadOnly="True" ColumnWidth="Auto" Height="220" CanUserReorderColumns="False" x:Name="OrderedDevices" Margin="10" AutoGeneratingColumn="OrderedServices_AutoGeneratingColumn" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                     <DataGrid.RowStyle>
                         <Style TargetType="DataGridRow">
                             <Style.Triggers>
@@ -61,17 +61,17 @@
                     </DataGrid.RowStyle>
                 </DataGrid>
 
-                <Grid Grid.Column="4" Grid.Row="3">
+                <Grid Grid.Column="4" Grid.Row="3" Margin="0,0,10,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <Button Grid.Row="0"  x:Name="AddService" Content="Добавить" HorizontalAlignment="Left" Style="{DynamicResource LightAction}" Margin="0,10,0,0" Click="openServiceAddition" VerticalAlignment="Top"/>
+                    <Button Grid.Row="0"  x:Name="AddDeviceBtn" Content="Добавить" HorizontalAlignment="Left" Style="{DynamicResource LightAction}" Margin="0,10,0,0" Click="openDeviceAddition" VerticalAlignment="Top"/>
                     <Button Grid.Row="1" x:Name="DeleteSelectedBtn" Content="Удалить" HorizontalAlignment="Left" Style="{DynamicResource LightAction}" Margin="0,5,0,0" Click="deleteSelectedService" VerticalAlignment="Top"/>
                 </Grid>
 
                 <Label Grid.Row="7" Grid.Column="0" x:Name="Label5" Content="Комментарий" HorizontalAlignment="Right" Margin="20,9.867,0,0" FontSize="14" FontWeight="Bold" VerticalAlignment="Bottom"/>
-                <TextBox Grid.Row="7" Grid.Column="1" x:Name="CommentBox" Margin="10.4,0,10,0" FontSize="18" FontWeight="Bold" Grid.ColumnSpan="3" AcceptsReturn="True" TextWrapping="Wrap"/>
+                <TextBox Grid.Row="7" Grid.Column="1" x:Name="CommentBox" Margin="10.4,0,10,0" Grid.ColumnSpan="3" AcceptsReturn="True" TextWrapping="Wrap"/>
 
                 <Label Grid.Row="8" Grid.Column="0" x:Name="Label4" Content="Стоимость" HorizontalAlignment="Right" Margin="20,10,0,20" FontSize="14" FontWeight="Bold" VerticalAlignment="Top"/>
                 <TextBox Grid.Row="8" Grid.Column="1" x:Name="PriceBox" Text="0" HorizontalAlignment="Left" Margin="10,10,0,20" FontSize="18" FontWeight="Bold" VerticalAlignment="Top" Width="100" Grid.ColumnSpan="2" KeyUp="priceLabel_KeyUp" GotFocus="priceLabel_GotFocus" LostFocus="priceLabel_LostFocus"/>

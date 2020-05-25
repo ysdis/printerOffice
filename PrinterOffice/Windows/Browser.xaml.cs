@@ -165,13 +165,6 @@ namespace PrinterOffice
         }
 
         /// <summary>
-        /// Закрывает окно
-        /// </summary>
-        private void Exit_Click(object sender, RoutedEventArgs e) {
-            Close();
-        }
-
-        /// <summary>
         /// Скрытие мешающихся столбцов у таблиц для разных групп данных, во время их отображения в таблице
         /// </summary>
         private void ClientsList_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e) {

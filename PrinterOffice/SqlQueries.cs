@@ -11,7 +11,8 @@
         public const string GET_ALL_DEVICE_TYPES = "SELECT id, title AS 'Название' FROM deviceTypes;";
         public const string GET_ALL_DEVICE_MANUFACS = "SELECT id, title AS 'Название' FROM deviceManufacs;";
         public const string GET_STORAGE = "SELECT * FROM storagedetail;";
-        public const string GET_EMPLOYEES = "SELECT * FROM employeesdetailed;";
+        public const string GET_ALL_EMPLOYEES = "SELECT * FROM employeesDetailed;";
+        public const string GET_ALL_WORKING_EMPLOYEES = "SELECT * FROM employeesDetailed WHERE `Статус` = 'Работает';";
         public const string GET_JUST_CREATED_ID = "SELECT LAST_INSERT_ID() AS 'latest';";
     }
 }

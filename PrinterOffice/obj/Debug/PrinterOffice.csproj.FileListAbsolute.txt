@@ -116,11 +116,9 @@ C:\Users\yaros\Source\Repos\ysdis\printerOffice\PrinterOffice\bin\Debug\Google.P
 C:\Users\yaros\Source\Repos\ysdis\printerOffice\PrinterOffice\bin\Debug\MySql.Data.xml
 C:\Users\yaros\Source\Repos\ysdis\printerOffice\PrinterOffice\bin\Debug\Renci.SshNet.xml
 C:\Users\yaros\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\PrinterOffice.csprojAssemblyReference.cache
-C:\Users\yaros\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\UserControls\OrderControlP.baml
 C:\Users\yaros\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\MainWindow.baml
 C:\Users\yaros\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\App.baml
 C:\Users\yaros\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\Windows\AdminPanel.g.cs
-C:\Users\yaros\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\UserControls\OrderControlP.g.cs
 C:\Users\yaros\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\MainWindow.g.cs
 C:\Users\yaros\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\App.g.cs
 C:\Users\yaros\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\PrinterOffice_MarkupCompile.cache
@@ -149,10 +147,6 @@ C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\Windows\
 C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\Windows\StorageItemControl.g.cs
 C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\Windows\EmployeeJobStatusControl.baml
 C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\Windows\EmployeeJobStatusControl.g.cs
-C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\EmployeeControl.baml
-C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\Windows\AddItemToOrderControl.baml
-C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\EmployeeControl.g.cs
-C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\Windows\AddItemToOrderControl.g.cs
 C:\Users\User1\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\PrinterOffice.csprojAssemblyReference.cache
 C:\Users\User1\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\Windows\EmployeeControl.baml
 C:\Users\User1\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\Windows\EmployeeJobStatusControl.baml
@@ -202,3 +196,12 @@ C:\Users\User1\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\PrinterO
 C:\Users\User1\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\PrinterOffice.csproj.GenerateResource.cache
 C:\Users\User1\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\PrinterOffice.csproj.CoreCompileInputs.cache
 C:\Users\User1\Source\Repos\ysdis\printerOffice\PrinterOffice\obj\Debug\PrinterOffice.csproj.CopyComplete
+C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\Windows\EmployeeControl.baml
+C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\Windows\EmployeeControl.g.cs
+C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\Windows\QuickSearch.baml
+C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\UserControls\OrderControl.baml
+C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\CreateOrder.g.cs
+C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\Windows\QuickSearch.g.cs
+C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\UserControls\OrderControl.g.cs
+C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\GeneratedInternalTypeHelper.g.cs
+C:\Users\yaros\source\repos\ysdis\printerOffice\PrinterOffice\obj\Debug\CreateOrder.baml
